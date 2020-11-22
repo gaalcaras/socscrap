@@ -1,0 +1,101 @@
+---
+title: "Comment utiliser le scraper Allociné ?"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{allocine-scraper}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Bien sûr, on commence par charger les paquets intéressants :
+
+```{r setup}
+library(tidyverse)
+library(purrr)
+library(socscrap)
+library(glue)
+```
+
+## Version simple
+
+Pour faire simple, on voudrait juste enregistrer progressivement les résultats du scraper, en cas de bug, imprévu, interruption, etc.
+
+On va utiliser `map()` avec une fonction personnalisée pour l'occasion, `get_yearly_ratings()`, qui crée un nouveau fichier dans un dossier `data-raw/ratings/by-year` pour chaque année extraite.
+
+```{r scrap, eval=FALSE}
+get_yearly_ratings <- function(year) {
+  # Utiliser socscrap pour récupérer les notes d'une année
+  this_year_ratings <- get_ratings(year)
+  
+  # Créer le dossier (s'il n'existe pas encore)
+  dir.create(here::here("data-raw", "ratings", "by-year"),
+             recursive = TRUE, showWarnings = FALSE)
+  
+  # Enregistrer un fichier temporaire avec les données de l'année
+  write_csv(this_year_ratings, here::here("data-raw", "ratings", "by-year", glue("{year}.csv")))
+}
+
+# Go! Récupérer les années 2018 - 2019
+map(2018:2019, ~ get_yearly_ratings(.x))
+```
+
+## Version avancée (avec statistiques)
+
+C'est un bon début... Mais ça peut être intéressant de collecter quelques statistiques sur la collecte : se faire une idée de l'ampleur des données récoltées, ou faire une vérification *ex post* pour être sûr que tout s'est bien passé.
+
+En reprenant le même code que la version simple :
+
+```{r prep_scrap, eval=FALSE}
+get_yearly_ratings <- function(year) {
+  # Chronométrer le temps d'exécution du scraping
+  scrap_start <- proc.time()
+  
+  # Utiliser socscrap pour récupérer les notes d'une année
+  this_year_ratings <- get_ratings(year)
+  
+  # Arrêter le chronomètre
+  scraping_duration <- proc.time() - scrap_start
+  
+  # Créer le dossier (s'il n'existe pas encore)
+  dir.create(here::here("data-raw", "ratings", "by-year"),
+             recursive = TRUE, showWarnings = FALSE)
+  
+  # Enregistrer un fichier temporaire avec les données de l'année
+  write_csv(this_year_ratings, here::here("data-raw", "ratings", "by-year", glue("{year}.csv")))
+  
+  tibble(year = year,
+         ratings = nrow(this_year_ratings),
+         films = length(unique(this_year_ratings$title)),
+         duration = scraping_duration[3])
+}
+
+# Go pour tout récupérer !
+report <- map_df(2000:2019, ~ get_yearly_ratings(.x))
+
+print(report)
+```
+
+On obtient à la fin le rapport suivant :
+
+```{r report, echo=FALSE}
+library(socscrap)
+data("report")
+knitr::kable(report)
+```
+
+Bilan :
+
++ `r sum(report$films)` films et `r sum(report$ratings)` évaluations presses
++ récoltées en `r round(sum(report$duration)/3600, 1)` heures
++ avec `r as.character(sum(report$films)*2+floor(sum(report$films)/15))` requêtes, soit `r as.character(round((sum(report$films)*2+floor(sum(report$films)/15))/sum(report$duration), 1))` requêtes par seconde.
+
+
