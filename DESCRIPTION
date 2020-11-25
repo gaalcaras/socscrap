@@ -1,12 +1,14 @@
 Package: socscrap
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Webscraping for social scientists
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: Gabriel Alcaras
+Maintainer: Gabriel Alcaras <gabriel.alcaras@ehess.fr>
+Description: This package is designed to teach a webscraping class to
+    social scientists. It provides a working scraper to extract film data
+    from a French website, as well as functions and extensive documentation
+    of the webscraping process.
+License: GNU GPLv3
 Encoding: UTF-8
 LazyData: true
 Imports:
@@ -20,7 +22,13 @@ Imports:
 Suggests: 
     testthat,
     knitr,
-    rmarkdown
+    rmarkdown,
+    DiagrammeR,
+    thematic,
+    viridis,
+    ggdendro,
+    patchwork,
+    svglite
 RoxygenNote: 7.1.1
 VignetteBuilder: knitr
 Depends: 

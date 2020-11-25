@@ -1,0 +1,185 @@
+---
+title: "Heatmap des revues"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Heatmap des revues}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  collapse = TRUE,
+  fig.align = "center",
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Commencer par charger les données :
+
+```{r setup}
+library(tidyverse)
+library(ggplot2)
+library(ggdendro)
+library(patchwork)
+library(svglite)
+
+library(thematic)
+thematic_on(bg = "#1d1f21", fg = "#c5c8c6", accent = "#c5c8c6")
+
+library(socscrap)
+data(ratings)
+```
+
+On ne garde que les 25 revues qui ont donné le plus de notes :
+
+```{r filter_ratings}
+main25 <- ratings %>%
+  count(paper, sort = T) %>%
+  head(25) %>%
+  pull(paper)
+
+ratings <- ratings %>%
+  filter(paper %in% main25)
+```
+
+# Trouver toutes les combinaisons de revues
+
+Sans doublons ([Cahiers, Positif] et [Positif, Cahiers]).
+
+```{r}
+# Liste des noms de revue (ordre alphabétique)
+papers <- ratings %>%
+  arrange(paper) %>%
+  pull(paper) %>%
+  unique()
+
+combinations <- papers %>%
+  # Générer toutes les combinaisons possibles de 2 éléments
+  # (sans doublons) -> Matrice 2x300
+  combn(2) %>% 
+  # On transpose (pour avoir les 300 revues en ligne)
+  t() %>%
+  as_tibble() %>%
+  rename(paper1 = V1,
+         paper2 = V2) %>%
+  # Il faut ajouter les diagonales de la heatmap, c'est-à-dire la combinaison
+  # de deux éléments qui sont la même revue, comme [Cahiers, Cahiers]
+  bind_rows(tibble(paper1 = papers,
+                   paper2 = papers
+  )) %>%
+  # Trier par ordre alphabétique
+  arrange(paper1, paper2)
+```
+
+# Calcul des distances entre chaque revue
+
+Pour chacune des 325 couples de revue, on calcule la distance entre leurs deux notes pour un même film.
+
+```{r distance}
+# Pour chaque film (title), associer une paire de revue
+distances <- expand_grid(title = unique(ratings$title),
+                         papers = combinations) %>%
+  # Déployer les deux colonnes (paper1 et paper2)
+  unpack(papers) %>%
+  # Joindre les notes des revues 1 et 2
+  left_join(select(ratings, title, paper, rating),
+            by = c("title", "paper1" = "paper")) %>%
+  rename(rating1 = rating) %>%
+  left_join(select(ratings, title, paper, rating),
+            by = c("title", "paper2" = "paper")) %>%
+  rename(rating2 = rating) %>%
+  # Évidemment, si au moins une des deux revues n'a pas donné de note au film,
+  # on se débarasse du film.
+  filter(!is.na(rating1)) %>%
+  filter(!is.na(rating2)) %>%
+  # Calcul de la distance des moindre carrés
+  mutate(distance_ls = (rating1 - rating2)^2)
+```
+
+# Matrice des distances
+
+Il faut maintenant transformer ce tableau en une matrice des distances
+
+```{r distance_matrix}
+dist_matrix <- distances %>%
+  select(paper1, paper2, distance_ls) %>%
+  group_by(paper1, paper2) %>%
+  summarise(distance_ls = sum(distance_ls)) %>%
+  pivot_wider(names_from = paper1,
+              values_from = distance_ls) %>%
+  arrange(paper2) %>%
+  select(1, order(colnames(.))) %>%
+  mutate_at(vars(-paper2), scale) %>%
+  column_to_rownames("paper2") %>%
+  as.matrix()
+
+dist_matrix_f <- dist_matrix
+
+# Pour avoir un plus joli graphique, remplir l'autre diagonale de la matrice
+dist_matrix_f[upper.tri(dist_matrix)] = t(dist_matrix_f)[upper.tri(dist_matrix_f)]
+```
+
+# Dendrogramme
+
+```{r dendro}
+dendro <- as.dendrogram(hclust(d = dist(x = dist_matrix_f)))
+```
+
+# Graphique final
+
+```{r final_graph}
+
+p_dendro_top <- dendro %>%
+  ggdendrogram() +
+  scale_x_discrete() +
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+  theme(axis.ticks.x = element_blank(),
+        axis.text.x = element_blank()) +
+  labs(y = "")
+
+p_dendro_right <- dendro %>%
+  ggdendrogram(rotate = TRUE) +
+  scale_x_discrete() +
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+  theme(axis.ticks.x = element_blank(),
+        axis.text.x = element_blank()) +
+  labs(x = "")
+
+p_heatmap_data <- dist_matrix_f %>%
+  as_tibble(rownames = "paper2") %>%
+  pivot_longer(-paper2, names_to = "paper1")
+
+p_heatmap <- p_heatmap_data %>%
+  ggplot(aes(x = factor(paper1, row.names(dist_matrix)[order.dendrogram(dendro)]),
+             y = factor(paper2, row.names(dist_matrix)[order.dendrogram(dendro)]),
+             fill = value)) +
+  geom_tile() +
+  scale_fill_viridis_c() +
+  scale_y_discrete(position = "right") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "left",
+        plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+  labs(x = "", y = "",
+       fill = "Distance")
+
+empty <- ggplot() + theme(
+    panel.background = element_rect(fill = "transparent"), # bg of the panel
+    plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+    panel.grid.major = element_blank(), # get rid of major grid
+    panel.grid.minor = element_blank(), # get rid of minor grid
+    legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+    legend.box.background = element_rect(fill = "transparent") # get rid of legend panel bg
+  )
+
+final_plot <- ((p_dendro_top / p_heatmap + plot_layout(heights = c(1, 4))) |
+  (empty / p_dendro_right + plot_layout(heights = c(1, 4)))) +
+  plot_layout(widths = c(4, 1))
+
+ggsave(here::here("inst", "slides", "scraping", "figures", "heatmap.svg"),
+       plot = final_plot,
+       width = 16, height = 10)
+```

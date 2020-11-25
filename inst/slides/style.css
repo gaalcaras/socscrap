@@ -1,0 +1,154 @@
+body {
+  background-color: #1d1f21;
+}
+
+p {
+  color: #c5c8c6;
+}
+
+.reveal .title, .reveal h1 {
+  color: #cc6666;
+}
+
+.reveal .subtitle {
+  color: #c5c8c6;
+  font-weight: 300;
+  font-size: 1.3em;
+}
+
+.reveal .author, .reveal .date {
+  color: #969896;
+  font-weight: 100;
+  font-size: 1.1em;
+}
+
+.reveal h2 {
+  color: #de935f
+}
+
+.reveal em {
+  color: #81a2be;
+}
+
+.reveal strong {
+  color: #b294bb;
+}
+
+.reveal code {
+  font-size: 0.8em;
+}
+
+.container{
+  display: flex;
+}
+
+div .col{
+  flex: 1;
+  text-align: left;
+  vertical-align: middle;
+  margin: 10px;
+}
+
+.reveal section p li ul {
+  display: inline-block;
+  font-size: 28px;
+}
+
+.reveal blockquote p {
+  font-size: 25px;
+}
+
+.reveal .slides section .fragment.visible {
+  color: #969896;
+}
+
+.reveal .slides section .fragment.visible em,
+.reveal .slides section .fragment.visible strong {
+  opacity: 0.5;
+}
+
+.reveal .slides section .fragment.current-fragment {
+  color: #c4c8c6;
+}
+
+.reveal .slides section .fragment.current-fragment em,
+.reveal .slides section .fragment.current-fragment strong {
+  opacity: 1;
+}
+
+.reveal section img {
+  border: none;
+  box-shadow: none;
+  background: none;
+}
+/* Controls */
+
+.reveal .controls .navigate-up.enabled {
+  border-bottom-color: #81a2be;
+}
+
+.reveal .controls .navigate-down.enabled {
+  border-top-color: #81a2be;
+}
+
+.reveal .controls .navigate-left.enabled {
+  border-right-color: #81a2be;
+}
+
+.reveal .controls .navigate-right.enabled {
+  border-left-color: #81a2be;
+}
+
+.reveal .progress span {
+  background: #81a2be;
+}
+
+/* Code highligthing */
+
+.reveal pre {
+  box-shadow: none;
+  padding: 5px;
+  border: 1px solid #282a2e;
+  font-size: 0.5em;
+  color: #c5c8c6;
+}
+
+/* Comment */
+.reveal .co {
+  color: #969896;
+}
+
+/* Rouge */
+.reveal .ot {
+  color: #cc6666;
+}
+
+/* Orange */
+.reveal .cf {
+  color: #de935f;
+}
+
+/* Jaune */
+.reveal .sc {
+  color: #f0c674;
+}
+
+/* Vert */
+.reveal .kw {
+  color: #b5bd68;
+}
+
+/* Aqua */
+.reveal .st {
+  color: #8abeb7;
+}
+
+/* Blue */
+.reveal .fu {
+  color: #81a2be;
+}
+
+/* Purple : pas utilisé */
+.purple {
+  color: #b294bb;
+}
