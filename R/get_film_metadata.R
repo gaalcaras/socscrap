@@ -30,7 +30,7 @@ get_film_metadata <- function(url) {
 
   tibble::tibble(
     title = html %>% get_text(".titlebar-title"),
-    date = html %>% socscrap::get_text(".date") %>% lubridate::dmy(locale = "fr_FR.utf8"),
+    date = html %>% socscrap::get_text(".date") %>% lubridate::dmy(locale = "fr_FR.UTF-8"),
     duration = html %>%
       socscrap::get_text(xpath = "//*[contains(@class, 'meta-body-info')]/text()", node = 4) %>%
       lubridate::duration(units = "minutes") %>%
