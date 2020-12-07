@@ -17,7 +17,7 @@ get_film_metadata <- function(url) {
     warning('the provided URL does not match a proper film page on the allocine website. Returning NAs.')
     return(tibble::tibble(
       title = NA_character_,
-      date = lubridate::NA_Date_,
+      date = NA_character_,
       duration = NA_real_,
       genre = NA_character_,
       nationality = NA_character_,
@@ -30,7 +30,7 @@ get_film_metadata <- function(url) {
 
   tibble::tibble(
     title = html %>% get_text(".titlebar-title"),
-    date = html %>% socscrap::get_text(".date") %>% lubridate::dmy(locale = "fr_FR.UTF-8"),
+    date = html %>% socscrap::get_text(".date"),
     duration = html %>%
       socscrap::get_text(xpath = "//*[contains(@class, 'meta-body-info')]/text()", node = 4) %>%
       lubridate::duration(units = "minutes") %>%
